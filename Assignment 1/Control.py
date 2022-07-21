@@ -1,65 +1,63 @@
-from cProfile import label
+# Importing Libraries
 import numpy as np
 from scipy.integrate import odeint
 from matplotlib import pyplot as plt
 from ipywidgets import interact
 
+# Defining Cache storage and g
 g = 9.8
+log1, log2 = [], []
 
-# The following function gives the ordinary differential
-# equation that our plant follows. Do not meddle with this.
-def f(x, t, theta):
-    return (x[1], (-5 * g / 7) * np.radians(theta))
-
-def deriv(X, theta):
-    dX = np.matmul(np.array([[0, 1], [0, 0]]), X) + np.array([0, (-5 * g / 7) * np.radians(theta)])*theta
+def deriv(X, t, theta):
+    dX = np.matmul(np.array([[0, 1], [0, 0]]), X) + np.array([0, (-5 * g / 7)])*np.radians(theta)
     return dX
 
-def sim(X,kp,ki,kd):   
-    # setpoint
-    Tsp = np.array([0, 0])
+def cutoff(val, limit=float('inf')):
+    return min(limit, max(-limit, val))
 
-    # set initial conditions and cooling flow
-    theta0 = 0
-    theta = theta0
+# starting simulation
+
+def solve(x=0):
+
+    # Achieving setpoints
+    Xsp = np.array([x, 0])  # [position, accelaration]
+
+    # set initial conditions
+    theta = 0
+    t = 0
 
     # do simulation at fixed time steps dt
-    dt = 0.05
+    dt = 0.1
     ti = 0.0
-    tf = 8.0    
+    tf = 10.0
 
     # control parameters
     g = 9.8
-    kp = 40
-    ki = 80
-    kd = 0
-    beta = 0
-    gamma = 0
+    kp = 8
+    ki = 4
+    kd = 3
 
-    # create python list to log results
-    log1, log2, log3 = [], [], []
-    X0 = np.array([0, 0])
-    X = X0
+    I_initial = 0  # Integral sum
 
-    # start simulation
-    eP_ = beta*Tsp - X0
-    eD_ = gamma*Tsp - X0
-    eD__ = eD_ - X0
+    X0 = np.array([10, 5])  # Initial state of [postion, acceleration]
+    X_initial = X0
+    e_prev = Xsp - X_initial
+    # PID control calculations
+    e = Xsp - X_initial
+    I_initial += dt*(e)
+    theta -= cutoff(sum(kp*(e) + ki*I_initial + kd*(e - e_prev)/dt), 1)
+    theta = cutoff(theta, 15)
+    
+    # log data and update state
+    log1.append(theta)
+    log2.append(X_initial)
+    X_prev = X_initial
+    X_initial = odeint(deriv,X0,[t,t+dt], args=(theta,))[-1]
+    X_initial[0] = cutoff(X_initial[0], 300)
 
-    for t in np.linspace(ti,tf,int((tf-ti)/dt)+1):
-        # PID control calculations
-        eP = beta*Tsp - X
-        eI = Tsp - X
-        eD = gamma*Tsp - X
-        theta -= kp*(eP - eP_) + ki*dt*eI + kd*(eD - 2*eD_ + eD__)/dt
-        
-        # log data and update state
-        log1.append(t)
-        log2.append(theta)
-        log3.append(X)
-        X = odeint(deriv,X0,[t,t+dt])[-1]
+    # save data for PID calculations
+    e_prev = e
+    t += dt
 
-        # save data for PID calculations
-        eD__,eD_,eP_ = eD_,eD,eP
+    return X_initial[0] - X_prev[0]
 
-interact(sim,X = (0,0),kp = (0,80), ki=(0,160), kd=(0,10));

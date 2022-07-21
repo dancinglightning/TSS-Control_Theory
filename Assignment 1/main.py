@@ -17,11 +17,11 @@ r = 0.1 # the radius of the ball
 
 # loading in images and transforming them to required sixes and angles. You can ignore this part.
 
-plate = pygame.image.load("plate.png")
+plate = pygame.image.load("C://Users//Yoru//Documents//GitHub//TSS-Control_Theory//Assignment 1//plate.png")
 plate = pygame.transform.rotate(plate, -45)
-ball = pygame.image.load("ball.png")
+ball = pygame.image.load("C://Users//Yoru//Documents//GitHub//TSS-Control_Theory//Assignment 1//ball.png")
 ball = pygame.transform.scale(ball, (40, 40))
-pivot = pygame.image.load("plain-triangle.png")
+pivot = pygame.image.load("C://Users//Yoru//Documents//GitHub//TSS-Control_Theory//Assignment 1//plain-triangle.png")
 
 # game control variable. This variable determines if the came continues to run. You can ignore this part.
 
@@ -66,7 +66,7 @@ while run:
     # any number of parameters you like and output the new system
     # variables and any other parameter you would like to track.
 
-    dx = c.solve()
+    dx = c.solve(x)
 
     # make sure the ball rotates
     dphi = dx / r
